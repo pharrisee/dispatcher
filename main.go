@@ -78,7 +78,11 @@ func runScripts(disp Disp) {
 				if script.NextRun.Before(t) {
 					now := time.Now()
 					script.NextRun = script.NextRun.Add(time.Duration(script.Interval))
-					cmd := exec.Command("/bin/bash", "-c", "./"+script.Name)
+					command := "/bin/sh -c '" + script.Name + "'"
+					bits := strings.Split(command, " ")
+					program := bits[0]
+					args := bits[1:]
+					cmd := exec.Command(program, args...)
 					out, err := cmd.CombinedOutput()
 					if err != nil {
 						log.Printf("%s: %s", script.Name, err)
