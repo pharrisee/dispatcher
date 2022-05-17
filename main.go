@@ -74,20 +74,22 @@ func runScripts(disp Disp) {
 	tick := time.NewTicker(disp.Interval)
 	for t := range tick.C {
 		for i, script := range disp.Scripts {
-			if script.NextRun.Before(t) {
-				now := time.Now()
-				script.NextRun = script.NextRun.Add(time.Duration(script.Interval))
-				cmd := exec.Command("/bin/bash", "-c", "./"+script.Name)
-				out, err := cmd.CombinedOutput()
-				if err != nil {
-					log.Printf("%s: %s", script.Name, err)
-					break
+			go func(i int, script Script) {
+				if script.NextRun.Before(t) {
+					now := time.Now()
+					script.NextRun = script.NextRun.Add(time.Duration(script.Interval))
+					cmd := exec.Command("/bin/bash", "-c", "./"+script.Name)
+					out, err := cmd.CombinedOutput()
+					if err != nil {
+						log.Printf("%s: %s", script.Name, err)
+						return
+					}
+					outS := strings.TrimSpace(string(out))
+					dur := time.Since(now)
+					fmt.Printf("%s :: %s (%s): %s\n", t.Format("2006-01-02 15:04:05.000"), script.Name, dur, outS)
 				}
-				outS := strings.TrimSpace(string(out))
-				dur := time.Since(now)
-				fmt.Printf("%s :: %s (%s): %s\n", t.Format("2006-01-02 15:04:05.000"), script.Name, dur, outS)
-			}
-			disp.Scripts[i] = script
+				disp.Scripts[i] = script
+			}(i, script)
 		}
 	}
 	select {}
