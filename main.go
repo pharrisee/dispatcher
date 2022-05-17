@@ -78,21 +78,21 @@ func runScripts(disp Disp) {
 				if script.NextRun.Before(t) {
 					now := time.Now()
 					script.NextRun = script.NextRun.Add(time.Duration(script.Interval))
-					command := "/bin/sh -c '" + script.Name + "'"
-					bits := strings.Split(command, " ")
+					disp.Scripts[i] = script
+					bits := strings.Split(script.Name, " ")
 					program := bits[0]
 					args := bits[1:]
 					cmd := exec.Command(program, args...)
 					out, err := cmd.CombinedOutput()
 					if err != nil {
-						log.Printf("%s: %s", script.Name, err)
+						fmt.Printf("ERROR: %s: %s\n", script.Name, err)
 						return
 					}
 					outS := strings.TrimSpace(string(out))
 					dur := time.Since(now)
 					fmt.Printf("%s :: %s (%s): %s\n", t.Format("2006-01-02 15:04:05.000"), script.Name, dur, outS)
 				}
-				disp.Scripts[i] = script
+
 			}(i, script)
 		}
 	}

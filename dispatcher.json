@@ -2,11 +2,11 @@
     "overall-interval": "500ms",
     "scripts": [
         {
-            "name": "10s-script.sh",
+            "name": "./10s-script.sh",
             "interval": "10s"
         },
         {
-            "name": "500ms-script.sh",
+            "name": "./500ms-script.sh phil woz ere",
             "interval": "500ms"
         }
     ]
