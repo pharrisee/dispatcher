@@ -1,0 +1,10 @@
+[
+    {
+        "name": "a.sh",
+        "interval": "10s"
+    },
+    {
+        "name": "b.sh",
+        "interval": "30s"
+    }
+]
