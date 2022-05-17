@@ -2,9 +2,11 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"os"
 	"os/exec"
+	"strings"
 	"time"
 )
 
@@ -20,43 +22,74 @@ type (
 	}
 	Scripts   []Script
 	inScripts []inScript
+	inDisp    struct {
+		Scripts  inScripts `json:"scripts"`
+		Interval string    `json:"overall-interval"`
+	}
+	Disp struct {
+		Scripts  Scripts `json:"scripts"`
+		Interval time.Duration
+	}
 )
 
 func main() {
-	b, err := os.ReadFile("scripts.json")
-	if err != nil {
-		log.Fatal(err)
-	}
-	var inscripts inScripts
-	err = json.Unmarshal(b, &inscripts)
-	if err != nil {
-		log.Fatal(err)
-	}
+	id := loadInDisp()
+	disp := convertInDisp(id)
+	runScripts(disp)
+}
 
-	var scripts Scripts
-	for _, s := range inscripts {
+func convertInDisp(id inDisp) Disp {
+	disp := Disp{}
+
+	for _, s := range id.Scripts {
 		i, err := time.ParseDuration(s.Interval)
 		if err != nil {
 			log.Fatal("converting interval: %w", err)
 		}
-		scripts = append(scripts, Script{Name: s.Name, Interval: i, NextRun: time.Now().Add(i)})
+		disp.Scripts = append(disp.Scripts, Script{Name: s.Name, Interval: i, NextRun: time.Now().Add(i)})
 	}
 
-	tick := time.NewTicker(time.Second)
+	var err error
+	disp.Interval, err = time.ParseDuration(id.Interval)
+	if err != nil {
+		log.Fatal("converting overall interval: %w", err)
+	}
+	return disp
+}
+
+func loadInDisp() inDisp {
+	b, err := os.ReadFile("dispatcher.json")
+	if err != nil {
+		log.Fatal(err)
+	}
+	id := inDisp{}
+	err = json.Unmarshal(b, &id)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return id
+}
+
+func runScripts(disp Disp) {
+	tick := time.NewTicker(disp.Interval)
 	for t := range tick.C {
-		for i, script := range scripts {
+		for i, script := range disp.Scripts {
 			if script.NextRun.Before(t) {
+				now := time.Now()
 				script.NextRun = script.NextRun.Add(time.Duration(script.Interval))
 				cmd := exec.Command("/bin/bash", "-c", "./"+script.Name)
-				cmd.Stdout = os.Stdout
-				cmd.Stderr = os.Stderr
-				err := cmd.Run()
+				out, err := cmd.CombinedOutput()
 				if err != nil {
 					log.Printf("%s: %s", script.Name, err)
+					break
 				}
+				outS := strings.TrimSpace(string(out))
+				dur := time.Since(now)
+				fmt.Printf("%s :: %s (%s): %s\n", t.Format("2006-01-02 15:04:05.000"), script.Name, dur, outS)
 			}
-			scripts[i] = script
+			disp.Scripts[i] = script
 		}
 	}
 	select {}
+
 }

@@ -1,0 +1,13 @@
+{
+    "overall-interval": "500ms",
+    "scripts": [
+        {
+            "name": "a.sh",
+            "interval": "10s"
+        },
+        {
+            "name": "b.sh",
+            "interval": "500ms"
+        }
+    ]
+}
