@@ -7,11 +7,11 @@ Create a config file called dispatcher.json:
     "overall-interval": "500ms",
     "scripts": [
         {
-            "name": "a.sh",
+            "name": "10s-script.sh",
             "interval": "10s"
         },
         {
-            "name": "b.sh",
+            "name": "500ms-script.sh",
             "interval": "500ms"
         }
     ]
